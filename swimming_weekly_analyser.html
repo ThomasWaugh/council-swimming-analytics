@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swimming Lessons — Weekly Analyser</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #F0EDE8;
+  --surface: #FAFAF7;
+  --border: #DDD9D2;
+  --text: #1C1A17;
+  --text-sec: #706C64;
+  --text-ter: #A09C94;
+  --pp: #1D4ED8;
+  --pp-bg: #EFF6FF;
+  --nb: #065F46;
+  --nb-bg: #ECFDF5;
+  --green: #15803D;
+  --green-bg: #DCFCE7;
+  --amber: #B45309;
+  --amber-bg: #FEF3C7;
+  --red: #B91C1C;
+  --red-bg: #FEE2E2;
+  --radius: 10px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: var(--text); min-height: 100vh; }
+
+/* HEADER */
+header {
+  background: var(--text);
+  color: #fff;
+  padding: 20px 32px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.header-left h1 { font-size: 17px; font-weight: 600; letter-spacing: -0.3px; }
+.header-left p { font-size: 12px; opacity: 0.45; margin-top: 2px; font-family: 'DM Mono', monospace; }
+#week-label { font-family: 'DM Mono', monospace; font-size: 12px; background: rgba(255,255,255,0.1); padding: 5px 12px; border-radius: 20px; opacity: 0; transition: opacity 0.3s; }
+#week-label.show { opacity: 1; }
+
+/* UPLOAD ZONE */
+.upload-section { padding: 32px; }
+.drop-zone {
+  border: 2px dashed var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  padding: 52px 32px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  position: relative;
+}
+.drop-zone:hover, .drop-zone.drag-over { border-color: var(--text); background: #fff; }
+.drop-zone input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; }
+.drop-icon { font-size: 36px; margin-bottom: 12px; }
+.drop-title { font-size: 16px; font-weight: 600; margin-bottom: 6px; }
+.drop-sub { font-size: 13px; color: var(--text-sec); }
+.drop-hint { font-size: 11px; color: var(--text-ter); margin-top: 10px; font-family: 'DM Mono', monospace; }
+
+/* DASHBOARD */
+#dashboard { display: none; padding: 0 32px 40px; }
+
+.section-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 1.2px;
+  text-transform: uppercase;
+  color: var(--text-ter);
+  margin: 28px 0 10px;
+}
+
+/* SUMMARY CARDS */
+.summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 8px; }
+.sum-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 14px 16px; }
+.sum-label { font-size: 11px; color: var(--text-sec); margin-bottom: 5px; }
+.sum-val { font-size: 26px; font-weight: 600; line-height: 1; font-family: 'DM Mono', monospace; }
+.sum-sub { font-size: 11px; color: var(--text-ter); margin-top: 4px; }
+
+/* POOL COMPARISON */
+.pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media(max-width:600px){ .pool-grid { grid-template-columns: 1fr; } }
+.pool-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.pool-header { padding: 12px 16px; font-weight: 600; font-size: 14px; display: flex; align-items: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.pool-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.pool-body { padding: 4px 0; }
+.pool-row { display: flex; justify-content: space-between; padding: 7px 16px; font-size: 13px; border-bottom: 1px solid #F5F3EF; }
+.pool-row:last-child { border: none; }
+.pool-row-label { color: var(--text-sec); }
+.pool-row-val { font-weight: 600; font-family: 'DM Mono', monospace; }
+
+/* UTILISATION BUCKETS */
+.bucket-row { display: grid; grid-template-columns: repeat(3,1fr); gap: 8px; }
+.bucket { border-radius: var(--radius); padding: 14px; text-align: center; }
+.bucket-num { font-size: 34px; font-weight: 700; font-family: 'DM Mono', monospace; line-height: 1; }
+.bucket-lbl { font-size: 11px; margin-top: 5px; font-weight: 500; }
+.bucket-pct { font-size: 10px; margin-top: 2px; opacity: 0.6; }
+
+/* STAGE TABLE */
+.tbl-wrap { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+th { text-align: left; padding: 8px 14px; font-size: 10px; font-weight: 600; color: var(--text-ter); border-bottom: 1px solid var(--border); white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; background: #F7F5F1; font-family: 'DM Mono', monospace; }
+td { padding: 7px 14px; border-bottom: 1px solid #F0EDE8; vertical-align: middle; }
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: #F7F5F1; }
+.bar-wrap { display: flex; align-items: center; gap: 8px; }
+.bar-bg { flex: 1; height: 6px; background: #E8E5E0; border-radius: 3px; overflow: hidden; min-width: 60px; }
+.bar-fill { height: 100%; border-radius: 3px; }
+.pct-lbl { font-size: 11px; min-width: 36px; text-align: right; font-weight: 600; font-family: 'DM Mono', monospace; }
+.pool-badge { font-size: 10px; padding: 2px 7px; border-radius: 4px; font-weight: 600; }
+
+/* TEACHER TABLE */
+.teacher-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+@media(max-width:700px){ .teacher-grid { grid-template-columns: 1fr; } }
+.teacher-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+.teacher-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px; border-bottom: 1px solid var(--border); background: #F7F5F1; }
+.teacher-av { width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; }
+.teacher-name { font-weight: 600; font-size: 13px; }
+.teacher-meta { font-size: 11px; color: var(--text-sec); font-family: 'DM Mono', monospace; }
+
+/* UPLOAD AGAIN */
+.re-upload { display: inline-flex; align-items: center; gap-6px; font-size: 12px; color: var(--text-sec); border: 1px solid var(--border); border-radius: 8px; padding: 6px 14px; cursor: pointer; background: var(--surface); margin-top: 4px; transition: all 0.15s; text-decoration: none; }
+.re-upload:hover { background: var(--text); color: #fff; border-color: var(--text); }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <h1>Swimming Lessons — Weekly Analyser</h1>
+    <p>Drop your CSV to generate this week's report</p>
+  </div>
+  <span id="week-label">—</span>
+</header>
+
+<!-- UPLOAD -->
+<div class="upload-section" id="upload-section">
+  <div class="drop-zone" id="drop-zone">
+    <input type="file" id="file-input" accept=".csv">
+    <div class="drop-icon">📂</div>
+    <div class="drop-title">Drop your bookings CSV here</div>
+    <div class="drop-sub">or click to browse</div>
+    <div class="drop-hint">Expected columns: Description · Class Name · Class Date Time · Bookings · Class Size · % Uptake · Income</div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div style="padding: 0 32px; padding-top: 8px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+    <div id="file-name" style="font-size:12px;color:var(--text-ter);font-family:'DM Mono',monospace"></div>
+    <label class="re-upload" for="file-input2">↑ Upload new CSV</label>
+    <input type="file" id="file-input2" accept=".csv" style="display:none">
+  </div>
+
+  <!-- COMBINED SUMMARY -->
+  <div class="section-label" style="padding:0 32px">Combined summary — both pools</div>
+  <div style="padding:0 32px"><div class="summary-grid" id="summary-cards"></div></div>
+
+  <!-- POOL COMPARISON -->
+  <div class="section-label" style="padding:0 32px">Pool comparison</div>
+  <div style="padding:0 32px"><div class="pool-grid" id="pool-grid"></div></div>
+
+  <!-- UTILISATION BUCKETS -->
+  <div class="section-label" style="padding:0 32px">Capacity utilisation — both pools</div>
+  <div style="padding:0 32px"><div class="bucket-row" id="buckets"></div></div>
+
+  <!-- STAGE BREAKDOWN -->
+  <div class="section-label" style="padding:0 32px">Fill rate by stage — both pools combined</div>
+  <div style="padding:0 32px">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Stage</th><th style="text-align:center">Lessons</th><th style="text-align:center">Booked</th><th style="text-align:center">Capacity</th><th>Fill rate</th></tr></thead>
+        <tbody id="stage-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- UNDER-UTILISED -->
+  <div class="section-label" style="padding:0 32px">⚠ Under-utilised classes — below 50% full</div>
+  <div style="padding:0 32px">
+    <div class="tbl-wrap">
+      <table>
+        <thead><tr><th>Pool</th><th>Class</th><th style="text-align:center">Booked</th><th style="text-align:center">Capacity</th><th>Fill rate</th></tr></thead>
+        <tbody id="under-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- TEACHER BREAKDOWN -->
+  <div class="section-label" style="padding:0 32px">Lessons per teacher</div>
+  <div style="padding:0 32px"><div class="teacher-grid" id="teacher-grid"></div></div>
+
+</div>
+
+<script>
+// ── TEACHER MAP ──────────────────────────────────────────────────────────────
+// Maps class name keywords / exact names → teacher
+// Update this object whenever new classes are added
+const TEACHER_RULES = [
+  // Name contains
+  {match: s => s.includes('jordan') || s.includes('jord') || s.includes('rookie'), teacher:'Jordan Boal'},
+  {match: s => s.includes('aimee'), teacher:'Aimee Lomax'},
+  {match: s => s.includes('natalie') || s.includes('nat '), teacher:'Natalie Jones'},
+  {match: s => s.includes('abner'), teacher:'Abner Josue'},
+  {match: s => s.includes('carlos') || s.includes('lola'), teacher:'Lola'},
+  {match: s => s.includes('mike') || s.includes('duckling 3') || s.includes('pre school') || s.includes('adult & baby') || s.includes('adult & toddler') || s.includes('bronze & silver') || s.includes('gold & honours'), teacher:"Mike O'Loughlin"},
+  {match: s => s.includes('heather') || s.includes('sen'), teacher:'Heather Jeffers'},
+  {match: s => s.includes('caira'), teacher:'Caira Monaghan'},
+  {match: s => s.includes('jade'), teacher:'Jade Fisher'},
+  {match: s => s.includes('stuart'), teacher:'Stuart Jones'},
+  {match: s => s.includes('erin'), teacher:'Erin Wright'},
+  {match: s => s.includes('graeme'), teacher:'Graeme Ashe'},
+];
+
+// Day+time+pool overrides for ambiguous classes
+const OVERRIDES = {
+  "Park Pool|Stage 1 18.00pm Abner|Mon":"Abner Josue",
+  "Park Pool|Stage 1 18.00pm Abner|Wed":"Abner Josue",
+  "Park Pool|Stage 2 16.00pm Mon|Mon":"Aimee Lomax",
+  "Park Pool|Stage 3 16.00PM Nat Mon|Mon":"Natalie Jones",
+  "Park Pool|Stage 2 5pm Mon|Mon":"Natalie Jones",
+  "Park Pool|Stage 6 Mon 5.00pm|Mon":"Abner Josue",
+  "Park Pool|Stage 5 Mon 4.00pm|Mon":"Abner Josue",
+  "Park Pool|Stage 5 Tue 4.30pm|Tue":"Mike O'Loughlin",
+  "Park Pool|Stage 4 Wed 4.30pm|Wed":"Mike O'Loughlin",
+  "Park Pool|Stage 3 17.00pm Fri|Fri":"Mike O'Loughlin",
+  "Park Pool|Stage 6 Fri 4.00pm|Fri":"Mike O'Loughlin",
+  "Park Pool|Stage 2 8.30am Sat|Sat":"Mike O'Loughlin",
+  "Park Pool|Stage 1 13.30pm Sat|Sat":"Mike O'Loughlin",
+  "Park Pool|Stage 5 Sat 2.30pm|Sat":"Mike O'Loughlin",
+  "Park Pool|Stage 6 Sat 2.00pm|Sat":"Mike O'Loughlin",
+  "Park Pool|Stage 2 17.30pm Fri|Fri":"Mike O'Loughlin",
+  "Park Pool|Stage 3 16.30pm Fri|Fri":"Jordan Boal",
+  "Park Pool|Stage 2 16.30pm Fri|Fri":"Natalie Jones",
+  "Park Pool|Stage 4 17.30pm Fri|Fri":"Natalie Jones",
+  "Park Pool|Stage 6 Nat 17.00pm|Fri":"Natalie Jones",
+  "Park Pool|Stage 5 Fri 4.00pm|Fri":"Natalie Jones",
+  "Park Pool|Stage 4 Mon 4.30pm|Mon":"Abner Josue",
+  "Park Pool|Stage 4 Mon 5.30pm|Mon":"Natalie Jones",
+  "Park Pool|Stage 4 Mon 6.00pm|Mon":"Aimee Lomax",
+  "Park Pool|Stage 2 17.30pm Mon|Mon":"Abner Josue",
+  "Park Pool|Stage 3 17.30pm Mon|Mon":"Aimee Lomax",
+  "Park Pool|Stage 6 Mon 6.00pm|Mon":"Natalie Jones",
+};
+
+function inferTeacher(pool, className, day) {
+  const key = `${pool}|${className}|${day}`;
+  if (OVERRIDES[key]) return OVERRIDES[key];
+  const n = className.toLowerCase();
+  for (const rule of TEACHER_RULES) {
+    if (rule.match(n)) return rule.teacher;
+  }
+  return 'Unknown';
+}
+
+// ── STAGE INFERENCE ──────────────────────────────────────────────────────────
+function getStage(name) {
+  const n = name.toLowerCase();
+  if (n.includes('1-2-1') || n.includes('2-2-1')) return '__PRIVATE__';
+  if (n.includes('duckling') || n.includes('duck')) return 'Ducklings';
+  if (n.includes('adult & baby')) return 'Adult & Baby';
+  if (n.includes('adult & toddler')) return 'Adult & Toddler';
+  if (n.includes('adult advanced') || n.includes('adult improver') || n.includes('adult beginner')) return 'Adult';
+  if (n.includes('gold') && n.includes('honour')) return 'Gold/Honours';
+  if (n.includes('gold')) return 'Gold/Honours';
+  if (n.includes('bronze') && n.includes('silver')) return 'Bronze/Silver';
+  if (n.includes('bronze')) return 'Bronze';
+  if (n.includes('silver')) return 'Silver';
+  if (n.includes('rookie')) return 'Rookie';
+  if (n.includes('pre school') || n.includes('preschool')) return 'Pre-School';
+  if (n.includes('advanced')) return 'Advanced Academy';
+  if (n.includes('sen')) return 'SEN';
+  const m = n.match(/stage\s*(\d+)/);
+  if (m) return `Stage ${m[1]}`;
+  return 'Other';
+}
+
+// ── CSV PARSER ───────────────────────────────────────────────────────────────
+function parseCSV(text) {
+  const lines = text.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.replace(/"/g,'').trim());
+  return lines.slice(1).map(line => {
+    const vals = []; let cur = '', inQ = false;
+    for (let i = 0; i < line.length; i++) {
+      if (line[i] === '"') { inQ = !inQ; }
+      else if (line[i] === ',' && !inQ) { vals.push(cur.trim()); cur = ''; }
+      else cur += line[i];
+    }
+    vals.push(cur.trim());
+    const obj = {};
+    headers.forEach((h, i) => obj[h] = vals[i] || '');
+    return obj;
+  });
+}
+
+// ── COLOUR HELPERS ───────────────────────────────────────────────────────────
+function fillColor(p) { return p >= 80 ? '#15803D' : p >= 50 ? '#B45309' : '#B91C1C'; }
+function fillBg(p)    { return p >= 80 ? '#DCFCE7' : p >= 50 ? '#FEF3C7' : '#FEE2E2'; }
+
+const dayNames = {0:'Sun',1:'Mon',2:'Tue',3:'Wed',4:'Thu',5:'Fri',6:'Sat'};
+const teacherColors = [
+  ['#EFF6FF','#1D4ED8'],['#ECFDF5','#065F46'],['#FEF3C7','#92400E'],
+  ['#EDE9FE','#4C1D95'],['#FFE4E6','#9F1239'],['#F0FDF4','#14532D'],
+  ['#FFF7ED','#7C2D12'],['#F5F3FF','#3730A3'],
+];
+
+// ── MAIN ANALYSIS ────────────────────────────────────────────────────────────
+function analyse(rows, filename) {
+  // Filter pools
+  const pp = rows.filter(r => r['Description']?.trim() === 'Park Pool' && getStage(r['Class Name'] || '') !== '__PRIVATE__');
+  const nb = rows.filter(r => r['Description']?.trim() === 'Nye Bevan'  && getStage(r['Class Name'] || '') !== '__PRIVATE__');
+  const all = [...pp, ...nb];
+
+  if (all.length === 0) {
+    alert('No Park Pool or Nye Bevan rows found. Check that your CSV has a "Description" column with those values.');
+    return;
+  }
+
+  // Week label from dates
+  const dates = rows.map(r => r['Class Date Time']?.slice(0,10)).filter(Boolean).sort();
+  const weekStart = dates[0] || ''; const weekEnd = dates[dates.length-1] || '';
+  document.getElementById('week-label').textContent = weekStart && weekEnd ? `${weekStart} → ${weekEnd}` : filename;
+  document.getElementById('week-label').classList.add('show');
+  document.getElementById('file-name').textContent = filename;
+
+  // ── POOL STATS ──────────────────────────────────────────────────────────
+  function poolStats(pRows) {
+    const lessons = pRows.length;
+    const booked = pRows.reduce((s,r) => s + (parseInt(r['Bookings'])||0), 0);
+    const cap    = pRows.reduce((s,r) => s + (parseInt(r['Class Size'])||0), 0);
+    const uptakes = pRows.map(r => parseFloat(r['% Uptake'])||0);
+    const avg    = uptakes.length ? Math.round(uptakes.reduce((a,b)=>a+b,0)/uptakes.length) : 0;
+    const full   = pRows.filter(r => parseFloat(r['% Uptake']) >= 80).length;
+    const under  = pRows.filter(r => parseFloat(r['% Uptake']) < 50).length;
+    const teachers = new Set(pRows.map(r => r['User Name'] || inferTeacher(r['Description']?.trim(), r['Class Name']||'', ''))).size;
+    return {lessons,booked,cap,avg,full,under,teachers};
+  }
+
+  const ppS = poolStats(pp);
+  const nbS = poolStats(nb);
+  const totBooked = ppS.booked + nbS.booked;
+  const totCap = ppS.cap + nbS.cap;
+  const totAvg = Math.round((ppS.avg + nbS.avg)/2);
+
+  // ── SUMMARY CARDS ───────────────────────────────────────────────────────
+  document.getElementById('summary-cards').innerHTML = [
+    {label:'Total lessons', val: ppS.lessons+nbS.lessons, sub:'across both pools'},
+    {label:'Children booked', val: totBooked, sub:`of ${totCap} capacity`},
+    {label:'Avg fill rate', val: totAvg+'%', sub:'both pools'},
+    {label:'Full lessons (≥80%)', val: ppS.full+nbS.full, sub:'green zone'},
+    {label:'Under 50% full', val: ppS.under+nbS.under, sub:'needs attention'},
+  ].map(c=>`<div class="sum-card"><div class="sum-label">${c.label}</div><div class="sum-val">${c.val}</div><div class="sum-sub">${c.sub}</div></div>`).join('');
+
+  // ── POOL COMPARISON ────────────────────────────────────────────────────
+  function poolCard(name, s, color, bg) {
+    return `<div class="pool-card">
+      <div class="pool-header" style="background:${bg}">
+        <span class="pool-dot" style="background:${color}"></span>${name}
+      </div>
+      <div class="pool-body">
+        ${[
+          ['Lessons',s.lessons],
+          ['Children booked',s.booked],
+          ['Capacity',s.cap],
+          ['Avg fill rate', s.avg+'%'],
+          ['≥80% full', `<span style="color:var(--green)">${s.full} (${Math.round(s.full/s.lessons*100)}%)</span>`],
+          ['<50% full',  `<span style="color:var(--red)">${s.under} (${Math.round(s.under/s.lessons*100)}%)</span>`],
+        ].map(([l,v])=>`<div class="pool-row"><span class="pool-row-label">${l}</span><span class="pool-row-val">${v}</span></div>`).join('')}
+      </div>
+    </div>`;
+  }
+  document.getElementById('pool-grid').innerHTML =
+    poolCard('Park Pool', ppS, '#1D4ED8', '#EFF6FF') +
+    poolCard('Nye Bevan', nbS, '#065F46', '#ECFDF5');
+
+  // ── BUCKETS ─────────────────────────────────────────────────────────────
+  const b80 = all.filter(r=>parseFloat(r['% Uptake'])>=80).length;
+  const b50 = all.filter(r=>{const u=parseFloat(r['% Uptake']);return u>=50&&u<80;}).length;
+  const bU  = all.filter(r=>parseFloat(r['% Uptake'])<50).length;
+  const tot = all.length;
+  document.getElementById('buckets').innerHTML = [
+    {num:b80, lbl:'lessons ≥80% full', pct:Math.round(b80/tot*100)+'% of all lessons', bg:'var(--green-bg)', col:'var(--green)'},
+    {num:b50, lbl:'lessons 50–79% full', pct:Math.round(b50/tot*100)+'% of all lessons', bg:'var(--amber-bg)', col:'var(--amber)'},
+    {num:bU,  lbl:'lessons <50% full', pct:Math.round(bU/tot*100)+'% of all lessons', bg:'var(--red-bg)', col:'var(--red)'},
+  ].map(b=>`<div class="bucket" style="background:${b.bg}"><div class="bucket-num" style="color:${b.col}">${b.num}</div><div class="bucket-lbl" style="color:${b.col}">${b.lbl}</div><div class="bucket-pct" style="color:${b.col}">${b.pct}</div></div>`).join('');
+
+  // ── STAGE BREAKDOWN ──────────────────────────────────────────────────────
+  const stageMap = {};
+  all.forEach(r => {
+    const s = getStage(r['Class Name']||'');
+    if (!stageMap[s]) stageMap[s] = {lessons:0,booked:0,cap:0};
+    stageMap[s].lessons++;
+    stageMap[s].booked += parseInt(r['Bookings'])||0;
+    stageMap[s].cap    += parseInt(r['Class Size'])||0;
+  });
+  const stageRows = Object.entries(stageMap)
+    .filter(([s])=>s!=='__PRIVATE__')
+    .map(([s,d])=>({stage:s,...d,pct:d.cap>0?Math.round(d.booked/d.cap*100):0}))
+    .sort((a,b)=>b.pct-a.pct);
+  document.getElementById('stage-tbody').innerHTML = stageRows.map(s=>`<tr>
+    <td style="font-weight:500">${s.stage}</td>
+    <td style="text-align:center;color:var(--text-sec)">${s.lessons}</td>
+    <td style="text-align:center;font-weight:600">${s.booked}</td>
+    <td style="text-align:center;color:var(--text-sec)">${s.cap}</td>
+    <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${s.pct}%;background:${fillColor(s.pct)}"></div></div><span class="pct-lbl" style="color:${fillColor(s.pct)}">${s.pct}%</span></div></td>
+  </tr>`).join('');
+
+  // ── UNDER-UTILISED ───────────────────────────────────────────────────────
+  const underRows = all
+    .filter(r => parseFloat(r['% Uptake']) < 50)
+    .map(r => ({
+      pool: r['Description']?.trim(),
+      name: r['Class Name'],
+      booked: parseInt(r['Bookings'])||0,
+      cap: parseInt(r['Class Size'])||0,
+      pct: Math.round(parseFloat(r['% Uptake'])||0),
+    }))
+    .sort((a,b)=>a.pct-b.pct);
+  document.getElementById('under-tbody').innerHTML = underRows.length === 0
+    ? '<tr><td colspan="5" style="text-align:center;color:var(--text-ter);padding:20px">🎉 No classes under 50% this week!</td></tr>'
+    : underRows.map(u=>{
+        const ppStyle = u.pool==='Park Pool' ? 'background:var(--pp-bg);color:var(--pp)' : 'background:var(--nb-bg);color:var(--nb)';
+        return`<tr>
+          <td><span class="pool-badge" style="${ppStyle}">${u.pool}</span></td>
+          <td style="font-weight:500">${u.name}</td>
+          <td style="text-align:center;font-weight:600">${u.booked}</td>
+          <td style="text-align:center;color:var(--text-sec)">${u.cap}</td>
+          <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${u.pct}%;background:var(--red)"></div></div><span class="pct-lbl" style="color:var(--red)">${u.pct}%</span></div></td>
+        </tr>`;
+      }).join('');
+
+  // ── TEACHER BREAKDOWN ────────────────────────────────────────────────────
+  const teacherMap = {};
+  all.forEach(r => {
+    const dt   = new Date(r['Class Date Time']?.replace(' ','T'));
+    const day  = isNaN(dt) ? '' : dayNames[dt.getDay()];
+    const name = r['User Name']?.trim() || inferTeacher(r['Description']?.trim()||'', r['Class Name']||'', day);
+    const pool = r['Description']?.trim();
+    if (!teacherMap[name]) teacherMap[name] = {lessons:0,booked:0,cap:0,pools:new Set()};
+    teacherMap[name].lessons++;
+    teacherMap[name].booked += parseInt(r['Bookings'])||0;
+    teacherMap[name].cap    += parseInt(r['Class Size'])||0;
+    teacherMap[name].pools.add(pool);
+  });
+  const teacherList = Object.entries(teacherMap).sort((a,b)=>b[1].lessons-a[1].lessons);
+  document.getElementById('teacher-grid').innerHTML = teacherList.map(([name,d],i)=>{
+    const [bg,col] = teacherColors[i % teacherColors.length];
+    const avg = d.cap>0 ? Math.round(d.booked/d.cap*100) : 0;
+    const initials = name.split(' ').map(w=>w[0]).join('').slice(0,3);
+    const poolsStr = [...d.pools].join(' · ');
+    return`<div class="teacher-card">
+      <div class="teacher-head">
+        <div class="teacher-av" style="background:${bg};color:${col}">${initials}</div>
+        <div>
+          <div class="teacher-name">${name}</div>
+          <div class="teacher-meta">${d.lessons} lessons · ${d.booked}/${d.cap} · avg ${avg}% · ${poolsStr}</div>
+        </div>
+      </div>
+      <div style="padding:8px 14px">
+        <div class="bar-wrap"><div class="bar-bg" style="height:8px"><div class="bar-fill" style="width:${avg}%;background:${fillColor(avg)};height:8px"></div></div><span class="pct-lbl" style="color:${fillColor(avg)}">${avg}%</span></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // Show dashboard
+  document.getElementById('upload-section').style.display = 'none';
+  document.getElementById('dashboard').style.display = 'block';
+}
+
+// ── FILE HANDLING ─────────────────────────────────────────────────────────
+function handleFile(file) {
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    try {
+      const rows = parseCSV(e.target.result);
+      analyse(rows, file.name);
+    } catch(err) {
+      alert('Error reading CSV: ' + err.message);
+    }
+  };
+  reader.readAsText(file);
+}
+
+document.getElementById('file-input').addEventListener('change', e => handleFile(e.target.files[0]));
+document.getElementById('file-input2').addEventListener('change', e => {
+  handleFile(e.target.files[0]);
+  document.getElementById('upload-section').style.display = '';
+  document.getElementById('dashboard').style.display = 'none';
+  handleFile(e.target.files[0]);
+});
+
+const dz = document.getElementById('drop-zone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => {
+  e.preventDefault();
+  dz.classList.remove('drag-over');
+  handleFile(e.dataTransfer.files[0]);
+});
+</script>
+</body>
+</html>
