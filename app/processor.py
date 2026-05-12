@@ -1,3 +1,4 @@
+import json
 import pandas as pd
 from datetime import datetime
 from pathlib import Path
@@ -5,223 +6,36 @@ from pathlib import Path
 
 ALLOWED_POOLS = {"Park Pool", "Nye Bevan"}
 PRIVATE_LESSON_KEYWORDS = ["1-2-1", "2-2-1"]
-
-# ── Park Pool: class_name → teacher (from park_pool_dashboard.html teacherMap) ──
-_PARK_POOL_MAP: dict[str, str] = {
-    "Adult & Baby 10am Fri": "Mike",
-    "Adult & Baby 10am Mon": "Mike",
-    "Adult & Baby 11.30am Tue": "Mike",
-    "Adult & Baby 1130  Sat": "Mike",
-    "Adult & Baby 12.30pm Wed": "Mike",
-    "Adult & Toddler 10.30am Fri": "Mike",
-    "Adult & Toddler 10.30am Mon": "Mike",
-    "Adult & Toddler 10.30am Tue": "Mike",
-    "Adult & Toddler 10am Wed": "Mike",
-    "Adult & Toddler 11am Mon": "Mike",
-    "Adult & Toddler 1200  Sat": "Mike",
-    "Adult & Toddler 9.30am Tue": "Mike",
-    "Adult Advanced 19.00pm Tue": "Abner",
-    "Adult Beginner 20.00pm Tue": "Abner",
-    "Adult Improver 19.30pm Tue": "Abner",
-    "Bronze & Silver Challenge 18.00pm Tue": "Mike",
-    "Bronze & Silver Challenge 18.30pm Wed": "Mike",
-    "Duckling 3 09.30 Mike Wed": "Mike",
-    "Duckling 3 11.30 Wednesday Mike Wed": "Mike",
-    "Duckling 3 12.00 Monday Mike": "Mike",
-    "Duckling 3 12.00PM Tuesday Mike": "Mike",
-    "Duckling 3 13.00 Mike Fri": "Mike",
-    "Duckling 3 13.00 Monday Mike": "Mike",
-    "Duckling 3 Fri 12.00 Mike": "Mike",
-    "Duckling 4 09.00am Mike Sat": "Mike",
-    "Duckling 4 10.00am Mike Sat": "Mike",
-    "Duckling 4 11.00am Mike Fri": "Mike",
-    "Duckling 4 16.00pm Abner": "Abner",
-    "Duckling 4 16.30pm Abner": "Abner",
-    "Duckling 4 17.00pm Abner": "Abner",
-    "Gold & Honours 19.15pm Challenge Wed": "Mike",
-    "Gold & Honours Challenge 18.30pm Fri": "Mike",
-    "Gold & Honours Challenge 18.45pm Tue": "Mike",
-    "Pre School 10.00am Tue": "Mike",
-    "Pre School 10.30am Wed": "Mike",
-    "Pre School 11.00am Sat": "Mike",
-    "Pre School 11.30am Fri": "Mike",
-    "Pre School 11.30am Mon": "Mike",
-    "Pre School 11am Tue": "Mike",
-    "Pre School 11am Wed": "Mike",
-    "Pre School 12.00pm Wed": "Mike",
-    "Pre School 13.30pm Fri": "Mike",
-    "Pre School 13.30pm Mon": "Mike",
-    "Pre School 9.30am Fri": "Mike",
-    "Pre School 9.30am Mon": "Mike",
-    "Pre School 9.30am Sat": "Mike",
-    "Rookie Lifeguard 18.30pm Fri": "Jordan",
-    "Stage 1  16.00pm Tue": "Mike",
-    "Stage 1 10.30am Sat": "Mike",
-    "Stage 1 13.30pm Sat": "Mike",
-    "Stage 1 16.00pm Jordan Fri": "Jordan",
-    "Stage 1 16.30pm Sat": "Mike",
-    "Stage 1 17.00pm Abner Tue": "Abner",
-    "Stage 1 17.00pm Thu": "Aimee",
-    "Stage 1 17.30pm Abner": "Abner",
-    "Stage 1 17.30pm Tue": "Aimee",
-    "Stage 1 18.00 Aimee Thu": "Aimee",
-    "Stage 1 18.00pm Abner": "Abner",
-    "Stage 1 4.30pm Mon": "Aimee",
-    "Stage 2 16.00pm Mon": "Aimee",
-    "Stage 2 16.00pm Sat": "Mike",
-    "Stage 2 16.00pm Thu": "Natalie",
-    "Stage 2 16.30 Aimee Tue": "Aimee",
-    "Stage 2 16.30pm Fri": "Natalie",
-    "Stage 2 17.00pm Tue": "Aimee",
-    "Stage 2 17.30pm Abner": "Abner",
-    "Stage 2 17.30pm Fri": "Mike",
-    "Stage 2 17.30pm Mon": "Abner",
-    "Stage 2 18.00pm Nat": "Natalie",
-    "Stage 2 5.30pm  Wed": "Mike",
-    "Stage 2 5pm Mon": "Natalie",
-    "Stage 2 8.30am Sat": "Mike",
-    "Stage 2 9.30am Sat": "Aimee",
-    "Stage 3 15.30pm Mike Sat": "Mike",
-    "Stage 3 16.00pm Abner Tue": "Abner",
-    "Stage 3 16.00PM Nat Mon": "Natalie",
-    "Stage 3 16.00pm Thu": "Aimee",
-    "Stage 3 16.30pm Fri": "Jordan",
-    "Stage 3 16.30pm Thu": "Natalie",
-    "Stage 3 17.00pm Carlos Wed": "Lola",
-    "Stage 3 17.00pm Fri": "Mike",
-    "Stage 3 17.30pm Mon": "Aimee",
-    "Stage 3 18.00pm Abner": "Abner",
-    "Stage 3 9.00am Sat": "Aimee",
-    "Stage 3 Mike Friday 18.00pm": "Mike",
-    "Stage 4 08.30am Aimee Sat": "Aimee",
-    "Stage 4 10.00am Sat": "Aimee",
-    "Stage 4 11.30am Sat": "Aimee",
-    "Stage 4 16.00 Aimee Tue": "Aimee",
-    "Stage 4 16.30 Abner Tue": "Abner",
-    "Stage 4 17.30pm Fri": "Natalie",
-    "Stage 4 4.00pm wed": "Lola",
-    "Stage 4 Fri 5.00pm": "Jordan",
-    "Stage 4 Mon 4.30pm": "Abner",
-    "Stage 4 Mon 5.30pm": "Natalie",
-    "Stage 4 Mon 6.00pm": "Aimee",
-    "Stage 4 Thu 5.00pm": "Natalie",
-    "Stage 4 Thu 5.30pm": "Aimee",
-    "Stage 4 Wed 4.30pm": "Mike",
-    "Stage 4 Wed 6.00pm": "Mike",
-    "Stage 5 17.30pm Thu": "Natalie",
-    "Stage 5 4.30pm wed": "Lola",
-    "Stage 5 Fri 4.00pm": "Natalie",
-    "Stage 5 Fri 4.30pm": "Mike",
-    "Stage 5 Fri 5.30pm": "Jordan",
-    "Stage 5 Mon 4.00pm": "Abner",
-    "Stage 5 Mon 4.30pm": "Natalie",
-    "Stage 5 Mon 5.00pm": "Aimee",
-    "Stage 5 Sat 10.30am": "Aimee",
-    "Stage 5 Sat 2.30pm": "Mike",
-    "Stage 5 Thu 4.30pm": "Aimee",
-    "Stage 5 Tue 4.30pm": "Mike",
-    "Stage 5 Tue 6.00pm": "Aimee",
-    "Stage 6 18.30pm Wed": "Lola",
-    "Stage 6 5.30pm Wed": "Lola",
-    "Stage 6 Fri 4.00pm": "Mike",
-    "Stage 6 Mon 5.00pm": "Abner",
-    "Stage 6 Mon 6.00pm": "Natalie",
-    "Stage 6 Nat 17.00pm": "Natalie",
-    "Stage 6 Sat 11.00am": "Aimee",
-    "Stage 6 Sat 2.00pm": "Mike",
-    "Stage 6 Thu 6.00pm": "Natalie",
-    "Stage 6 Tue 5.30pm": "Mike",
-    "Stage 7 15.00pm Mike Sat": "Mike",
-    "Stage 7 6.00pm Wed": "Lola",
-    "Stage 7 Fri 6.00pm": "Jordan",
-    "Stage 7 Thu 6.30pm": "Natalie",
-    "Stage 7 Tue 5.00pm": "Mike",
-    "Stage 7 Wed 5.00pm": "Mike",
-}
-
-# ── Nye Bevan: (class_name, day, time) → teacher (from nye_bevan_dashboard.html) ──
-_NYE_BEVAN_MAP: dict[tuple[str, str, str], str] = {
-    ("Stage 1 Mon",          "Mon", "16:00"): "Stuart",
-    ("Stage 2 Mon",          "Mon", "16:30"): "Stuart",
-    ("Stage 4 Mon",          "Mon", "16:30"): "Stuart",
-    ("Stage 4 Mon",          "Mon", "17:00"): "Stuart",
-    ("Stage 1 Mon",          "Mon", "17:30"): "Stuart",
-    ("Stage 4 Mon",          "Mon", "18:00"): "Stuart",
-    ("Stage 3 Mon",          "Mon", "18:30"): "Stuart",
-    ("Stage 3 Mon",          "Mon", "16:00"): "Heather",
-    ("Stage 3 Mon",          "Mon", "17:00"): "Heather",
-    ("Stage 6 Mon",          "Mon", "17:30"): "Heather",
-    ("Stage 5 Mon",          "Mon", "18:00"): "Heather",
-    ("Advanced Academy Mon", "Mon", "18:30"): "Heather",
-    ("stage 7 19.15pm",      "Mon", "19:15"): "Heather",
-    ("Stage 3 Tue",          "Tue", "16:00"): "Caira",
-    ("Stage 1 Tue",          "Tue", "16:30"): "Caira",
-    ("Stage 2 Tue",          "Tue", "17:00"): "Caira",
-    ("Stage 7 Tue",          "Tue", "17:30"): "Caira",
-    ("Stage 1 Tue",          "Tue", "18:00"): "Caira",
-    ("Bronze/ Silver Tue",   "Tue", "18:30"): "Caira",
-    ("duckling 4",           "Tue", "16:00"): "Jade",
-    ("Stage 2 Tue",          "Tue", "16:30"): "Jade",
-    ("Stage 1 Tue",          "Tue", "17:00"): "Jade",
-    ("Stage 6 Tue",          "Tue", "17:30"): "Jade",
-    ("Stage 2 Wed",          "Wed", "16:00"): "Heather",
-    ("Stage 1 Wed",          "Wed", "16:30"): "Stuart",
-    ("Stage 4 Wed",          "Wed", "16:30"): "Heather",
-    ("Stage 4 Wed",          "Wed", "17:00"): "Stuart",
-    ("Stage 3 Wed",          "Wed", "17:00"): "Heather",
-    ("Stage 2 Wed",          "Wed", "17:30"): "Stuart",
-    ("stage 3 5.30pm HJ",    "Wed", "17:30"): "Heather",
-    ("Stage 3 Wed",          "Wed", "18:00"): "Stuart",
-    ("Stage 1 Wed",          "Wed", "18:00"): "Heather",
-    ("Stage 6 Wed",          "Wed", "18:30"): "Heather",
-    ("Stage 5 Wed",          "Wed", "19:00"): "Heather",
-    ("Adult Beginner Wed",   "Wed", "19:30"): "Heather",
-    ("Stage 5 Thu",          "Thu", "16:00"): "Heather",
-    ("Stage 2 Thu",          "Thu", "16:30"): "Heather",
-    ("Stage 4 Thu",          "Thu", "17:00"): "Heather",
-    ("Stage 1 Thu",          "Thu", "17:30"): "Heather",
-    ("Stage 4 Thu",          "Thu", "18:00"): "Heather",
-    ("SEN Thu",              "Thu", "18:30"): "Heather",
-    ("Stage 3 Thu",          "Thu", "16:30"): "Stuart",
-    ("Stage 3 Thu",          "Thu", "17:00"): "Stuart",
-    ("stage 5 17.30pm",      "Thu", "17:30"): "Stuart",
-    ("stage 6 6pm sj",       "Thu", "18:00"): "Stuart",
-    ("stage 1 16.00 thur",   "Thu", "16:00"): "Lola",
-    ("stage 7 16.30 thur",   "Thu", "16:30"): "Lola",
-    ("stage 2 17.00 thur",   "Thu", "17:00"): "Lola",
-    ("bronze 17.30 thur",    "Thu", "17:30"): "Lola",
-    ("stage 3 18.00 thur",   "Thu", "18:00"): "Lola",
-    ("Stage 5 Fri",          "Fri", "16:00"): "Caira",
-    ("Duckling 4 Fri",       "Fri", "16:30"): "Caira",
-    ("stage 1 5.00pm",       "Fri", "17:00"): "Caira",
-    ("Stage 2 Fri",          "Fri", "17:30"): "Caira",
-    ("Stage 5 Fri",          "Fri", "18:00"): "Caira",
-    ("Stage 3 Fri",          "Fri", "16:30"): "Stuart",
-    ("Stage 6 Fri",          "Fri", "17:00"): "Stuart",
-    ("Stage 1 Fri",          "Fri", "17:30"): "Stuart",
-    ("Stage 4 Fri",          "Fri", "18:00"): "Stuart",
-    ("Stage 3 Sat",              "Sat", "09:15"): "Caira",
-    ("Stage 2 Sat",              "Sat", "09:45"): "Caira",
-    ("Stage 1 Sat",              "Sat", "10:15"): "Caira",
-    ("duckling 4 10.45am Sat",   "Sat", "10:45"): "Caira",
-}
+_TEACHERS_FILE = Path(__file__).resolve().parent.parent / "teachers.json"
 
 
-def _infer_teacher(class_name: str, pool: str, day: str, time: str) -> str:
-    if pool == "Park Pool" and class_name in _PARK_POOL_MAP:
-        return _PARK_POOL_MAP[class_name]
-    if pool == "Nye Bevan":
-        key = (class_name, day, time)
-        if key in _NYE_BEVAN_MAP:
-            return _NYE_BEVAN_MAP[key]
-    # keyword fallback for any class names not yet in the override maps
+def _load_teacher_assignments() -> dict[tuple, str]:
+    if not _TEACHERS_FILE.exists():
+        return {}
+    with open(_TEACHERS_FILE, encoding="utf-8") as f:
+        entries = json.load(f)
+    return {
+        (e["pool"], e["class_name"], e["day"], e["time"]): e["teacher"]
+        for e in entries
+    }
+
+
+
+def _infer_teacher(class_name: str, pool: str, day: str, time: str,
+                   assignments: dict) -> str:
+    key = (pool, class_name, day, time)
+    if key in assignments:
+        return assignments[key]
+    # keyword fallback for any class not yet in teachers.json
     name = class_name.lower()
+    if "natalie f" in name:
+        return "Natalie F"
     if "jordan" in name or "jord" in name or "rookie" in name:
         return "Jordan"
     if "aimee" in name:
         return "Aimee"
     if "natalie" in name or "nat " in name:
-        return "Natalie"
+        return "Nat J"
     if "abner" in name:
         return "Abner"
     if "carlos" in name or "lola" in name:
@@ -312,12 +126,14 @@ def process_csv(filepath: str) -> dict:
     df["bookings"] = pd.to_numeric(df["Bookings"], errors="coerce").fillna(0).astype(int)
     df["class_size"] = pd.to_numeric(df["Class Size"], errors="coerce").fillna(0).astype(int)
     df["uptake"] = df["% Uptake"].apply(_parse_uptake)
+    assignments = _load_teacher_assignments()
     df["teacher"] = df.apply(
         lambda row: _infer_teacher(
             str(row["Class Name"]).strip(),
             str(row["Description"]).strip(),
             row["day"],
             row["time"],
+            assignments,
         ),
         axis=1,
     )
