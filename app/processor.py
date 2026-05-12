@@ -10,15 +10,15 @@ PRIVATE_LESSON_KEYWORDS = ["1-2-1", "2-2-1"]
 def _infer_teacher(class_name: str) -> str:
     name = class_name.lower()
     if "jordan" in name or "jord" in name or "rookie" in name:
-        return "Teacher A"
+        return "Jordan"
     if "aimee" in name:
-        return "Teacher B"
+        return "Aimee"
     if "natalie" in name or "nat " in name:
-        return "Teacher C"
+        return "Natalie"
     if "abner" in name:
-        return "Teacher D"
+        return "Abner"
     if "carlos" in name or "lola" in name:
-        return "Teacher E"
+        return "Carlos"
     if (
         "mike" in name
         or "duckling 3" in name
@@ -28,15 +28,15 @@ def _infer_teacher(class_name: str) -> str:
         or "bronze & silver" in name
         or "gold & honours" in name
     ):
-        return "Teacher F"
+        return "Mike"
     if "heather" in name or "sen" in name:
-        return "Teacher H"
+        return "Heather"
     if "caira" in name:
-        return "Teacher I"
+        return "Caira"
     if "jade" in name:
-        return "Teacher J"
+        return "Jade"
     if "stuart" in name:
-        return "Teacher G"
+        return "Stuart"
     return "Unknown"
 
 
