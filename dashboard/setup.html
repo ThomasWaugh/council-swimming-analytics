@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setup — Swimming Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: #F3F4F6; color: #111827; min-height: 100vh; display: flex; flex-direction: column; }
+
+    header { background: #1E293B; color: #F8FAFC; padding: 0 2rem; height: 60px; display: flex; align-items: center; }
+    header h1 { font-size: 1.05rem; font-weight: 600; }
+
+    main { flex: 1; display: flex; align-items: center; justify-content: center; padding: 2rem; }
+
+    .card {
+      background: #fff;
+      border: 1px solid #E5E7EB;
+      border-radius: .75rem;
+      padding: 2.5rem;
+      width: 100%;
+      max-width: 520px;
+      box-shadow: 0 4px 24px rgba(0,0,0,.06);
+    }
+
+    .icon { font-size: 2.5rem; margin-bottom: 1rem; }
+    h2 { font-size: 1.35rem; font-weight: 700; margin-bottom: .5rem; }
+    .intro { font-size: .9rem; color: #6B7280; line-height: 1.6; margin-bottom: 1.75rem; }
+
+    label { display: block; font-size: .82rem; font-weight: 600; color: #374151; margin-bottom: .4rem; }
+    input[type="text"] {
+      width: 100%; padding: .65rem .9rem;
+      border: 1.5px solid #D1D5DB; border-radius: .5rem;
+      font-family: inherit; font-size: .9rem; color: #111827;
+      outline: none; transition: border-color .15s;
+    }
+    input[type="text"]:focus { border-color: #1E293B; }
+
+    .hint { font-size: .78rem; color: #9CA3AF; margin-top: .4rem; }
+
+    .test-result {
+      margin-top: .75rem; padding: .6rem .9rem;
+      border-radius: .4rem; font-size: .83rem; font-weight: 500;
+      display: none;
+    }
+    .test-result.ok  { background: #DCFCE7; color: #15803D; display: block; }
+    .test-result.err { background: #FEE2E2; color: #B91C1C; display: block; }
+
+    .actions { display: flex; gap: .75rem; margin-top: 1.5rem; flex-wrap: wrap; }
+
+    button {
+      padding: .65rem 1.25rem; border: none; border-radius: .5rem;
+      font-family: inherit; font-size: .875rem; font-weight: 600;
+      cursor: pointer; transition: opacity .15s;
+    }
+    button:hover { opacity: .85; }
+    button:disabled { opacity: .5; cursor: not-allowed; }
+
+    .btn-test   { background: #F3F4F6; color: #374151; }
+    .btn-save   { background: #1E293B; color: #fff; }
+    .btn-skip   { background: none; color: #6B7280; font-weight: 400; text-decoration: underline; border: none; padding: .65rem 0; cursor: pointer; font-size: .875rem; font-family: inherit; }
+
+    .success-msg {
+      display: none; margin-top: 1rem; padding: .75rem 1rem;
+      background: #DCFCE7; color: #15803D; border-radius: .5rem; font-size: .875rem; font-weight: 500;
+    }
+    .success-msg.show { display: block; }
+
+    .example { margin-top: 1.5rem; padding: 1rem; background: #F9FAFB; border-radius: .5rem; border: 1px solid #E5E7EB; }
+    .example-title { font-size: .75rem; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; color: #9CA3AF; margin-bottom: .5rem; }
+    .example-path { font-size: .8rem; color: #374151; font-family: monospace; line-height: 1.8; }
+  </style>
+</head>
+<body>
+<header>
+  <h1>West Lancashire — Swimming Lessons Live Dashboard</h1>
+</header>
+<main>
+  <div class="card">
+    <div class="icon">📁</div>
+    <h2>Set up your export folder</h2>
+    <p class="intro">
+      Tell the dashboard where to look for your Scuba CSV exports.
+      Once set up, you just drop a CSV file into this folder and the
+      dashboard updates automatically — no other steps needed.
+    </p>
+
+    <label for="folder-input">Folder path</label>
+    <input type="text" id="folder-input" placeholder="e.g. C:\Users\Manager\OneDrive\Swimming Exports" />
+    <p class="hint">Copy the path from File Explorer's address bar and paste it here.</p>
+
+    <div id="test-result" class="test-result"></div>
+
+    <div class="example">
+      <div class="example-title">How to find your folder path</div>
+      <div class="example-path">
+        1. Open File Explorer<br>
+        2. Navigate to your OneDrive folder<br>
+        3. Click the address bar at the top<br>
+        4. Copy the full path and paste it above
+      </div>
+    </div>
+
+    <div class="actions">
+      <button class="btn-test" onclick="testFolder()">Test folder</button>
+      <button class="btn-save" id="save-btn" onclick="saveFolder()">Save &amp; continue</button>
+    </div>
+    <button class="btn-skip" onclick="window.location='/'">Skip for now — go to dashboard</button>
+
+    <div id="success-msg" class="success-msg">
+      Saved! Close this window and restart the server (run.bat) for the change to take effect.
+      <br><br>
+      <a href="/" style="color:#15803D;font-weight:600">Go to dashboard →</a>
+    </div>
+  </div>
+</main>
+
+<script>
+  async function loadCurrent() {
+    try {
+      const res = await fetch('/api/config');
+      const config = await res.json();
+      if (config.watch_folder) {
+        document.getElementById('folder-input').value = config.watch_folder;
+      }
+    } catch(e) {}
+  }
+
+  async function testFolder() {
+    const folder = document.getElementById('folder-input').value.trim();
+    const el = document.getElementById('test-result');
+    if (!folder) { el.className = 'test-result err'; el.textContent = 'Please enter a folder path first.'; return; }
+    el.className = 'test-result'; el.textContent = 'Testing…';
+    try {
+      const res = await fetch('/api/config/test', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({watch_folder: folder})
+      });
+      const data = await res.json();
+      if (data.exists) {
+        el.className = 'test-result ok';
+        el.textContent = '✓ Folder found! You can now save.';
+      } else {
+        el.className = 'test-result err';
+        el.textContent = '✗ Folder not found. Check the path and try again.';
+      }
+    } catch(e) {
+      el.className = 'test-result err';
+      el.textContent = 'Error connecting to server.';
+    }
+  }
+
+  async function saveFolder() {
+    const folder = document.getElementById('folder-input').value.trim();
+    if (!folder) return;
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      await fetch('/api/config', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({watch_folder: folder})
+      });
+      document.getElementById('success-msg').classList.add('show');
+      btn.textContent = 'Saved!';
+    } catch(e) {
+      btn.disabled = false;
+      btn.textContent = 'Save & continue';
+    }
+  }
+
+  loadCurrent();
+</script>
+</body>
+</html>

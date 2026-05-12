@@ -185,8 +185,13 @@
     <span id="filename-display"></span>
     <span id="last-updated"></span>
     <span id="status-badge" class="status-badge waiting">Waiting for data</span>
+    <a href="/manage" style="color:#94A3B8;font-size:.82rem;text-decoration:none;white-space:nowrap" onmouseover="this.style.color='#F8FAFC'" onmouseout="this.style.color='#94A3B8'">Manage teachers</a>
   </div>
 </header>
+
+<div id="setup-banner" style="display:none;background:#78350F;color:#FEF3C7;padding:.6rem 2rem;font-size:.83rem;font-weight:500">
+  ⚠ Watch folder not found — <a href="/setup" style="color:#FDE68A;font-weight:700">click here to set it up</a>
+</div>
 
 <main id="main-content">
   <div class="waiting-box">
@@ -354,6 +359,11 @@
 
   async function fetchAndRender() {
     try {
+      const statusRes = await fetch('/api/status');
+      const statusData = await statusRes.json();
+      document.getElementById('setup-banner').style.display =
+        statusData.folder_ok === false ? 'block' : 'none';
+
       const res = await fetch('/api/data');
       const data = await res.json();
 

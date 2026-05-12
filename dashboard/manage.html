@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Manage Teachers — Swimming Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --border: #E5E7EB;
+      --bg: #F3F4F6;
+      --card: #fff;
+      --header: #1E293B;
+      --grey: #6B7280;
+      --changed: #FEF9C3;
+      --changed-border: #FDE047;
+    }
+    body { font-family: 'DM Sans', sans-serif; background: var(--bg); color: #111827; min-height: 100vh; }
+
+    /* ── Header ── */
+    header {
+      background: var(--header); color: #F8FAFC;
+      padding: 0 2rem; height: 60px;
+      display: flex; align-items: center; justify-content: space-between;
+      position: sticky; top: 0; z-index: 100;
+      box-shadow: 0 1px 4px rgba(0,0,0,.3);
+    }
+    .header-left { display: flex; align-items: center; gap: 1rem; }
+    .back-link { color: #94A3B8; text-decoration: none; font-size: .85rem; display: flex; align-items: center; gap: .3rem; }
+    .back-link:hover { color: #F8FAFC; }
+    header h1 { font-size: 1rem; font-weight: 600; }
+    .save-wrap { display: flex; align-items: center; gap: 1rem; }
+    .change-count { font-size: .8rem; color: #FDE68A; display: none; }
+    .change-count.show { display: block; }
+    .btn-save {
+      background: #15803D; color: #fff;
+      border: none; border-radius: .4rem;
+      padding: .45rem 1.1rem; font-family: inherit; font-size: .85rem; font-weight: 600;
+      cursor: pointer; transition: opacity .15s;
+    }
+    .btn-save:hover { opacity: .85; }
+    .btn-save:disabled { opacity: .5; cursor: not-allowed; }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed; bottom: 1.5rem; left: 50%; transform: translateX(-50%);
+      background: #15803D; color: #fff;
+      padding: .75rem 1.5rem; border-radius: .5rem;
+      font-size: .875rem; font-weight: 600;
+      box-shadow: 0 4px 16px rgba(0,0,0,.2);
+      opacity: 0; transition: opacity .3s; pointer-events: none; z-index: 200;
+    }
+    .toast.show { opacity: 1; }
+
+    /* ── Layout ── */
+    main { max-width: 900px; margin: 0 auto; padding: 1.5rem; }
+
+    /* ── Pool tabs ── */
+    .tabs { display: flex; gap: .5rem; margin-bottom: 1.25rem; }
+    .tab {
+      padding: .5rem 1.25rem; border-radius: .4rem;
+      font-size: .875rem; font-weight: 600; cursor: pointer;
+      background: var(--card); border: 1.5px solid var(--border); color: var(--grey);
+      transition: all .15s;
+    }
+    .tab.active { background: var(--header); border-color: var(--header); color: #fff; }
+
+    /* ── Search ── */
+    .toolbar { display: flex; gap: .75rem; margin-bottom: 1.25rem; align-items: center; }
+    .search-input {
+      flex: 1; padding: .55rem .9rem;
+      border: 1.5px solid var(--border); border-radius: .4rem;
+      font-family: inherit; font-size: .875rem; outline: none;
+    }
+    .search-input:focus { border-color: var(--header); }
+    .filter-day {
+      padding: .55rem .9rem; border: 1.5px solid var(--border); border-radius: .4rem;
+      font-family: inherit; font-size: .875rem; background: var(--card); outline: none; cursor: pointer;
+    }
+    .filter-day:focus { border-color: var(--header); }
+    .result-count { font-size: .8rem; color: var(--grey); white-space: nowrap; }
+
+    /* ── Day section ── */
+    .day-section { margin-bottom: 1.5rem; }
+    .day-heading {
+      font-size: .7rem; font-weight: 700; letter-spacing: .1em;
+      text-transform: uppercase; color: var(--grey);
+      margin-bottom: .5rem; padding: 0 .25rem;
+    }
+    .table-wrap { background: var(--card); border: 1px solid var(--border); border-radius: .625rem; overflow: hidden; }
+    table { width: 100%; border-collapse: collapse; font-size: .85rem; }
+    thead th {
+      background: #F9FAFB; padding: .55rem 1rem;
+      text-align: left; font-weight: 600; font-size: .75rem; color: var(--grey);
+      border-bottom: 1px solid var(--border);
+    }
+    tbody td { padding: .55rem 1rem; border-bottom: 1px solid var(--border); vertical-align: middle; }
+    tbody tr:last-child td { border-bottom: none; }
+    tbody tr.changed { background: var(--changed); }
+
+    .time-cell { color: var(--grey); white-space: nowrap; width: 60px; }
+    .class-cell { color: #374151; }
+    .teacher-cell { width: 180px; }
+
+    .teacher-input {
+      width: 100%; padding: .35rem .6rem;
+      border: 1.5px solid var(--border); border-radius: .35rem;
+      font-family: inherit; font-size: .84rem; color: #111827;
+      outline: none; background: var(--card);
+      transition: border-color .15s;
+    }
+    .teacher-input:focus { border-color: #1E293B; }
+    .teacher-input.modified { border-color: var(--changed-border); background: #FFFBEB; }
+
+    .empty { padding: 2.5rem; text-align: center; color: var(--grey); font-size: .875rem; }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="header-left">
+    <a class="back-link" href="/">← Dashboard</a>
+    <h1>Manage Teacher Assignments</h1>
+  </div>
+  <div class="save-wrap">
+    <span class="change-count" id="change-count"></span>
+    <button class="btn-save" id="save-btn" onclick="saveAll()">Save Changes</button>
+  </div>
+</header>
+
+<main>
+  <div class="tabs">
+    <div class="tab active" id="tab-park" onclick="switchPool('Park Pool')">Park Pool</div>
+    <div class="tab" id="tab-nye" onclick="switchPool('Nye Bevan')">Nye Bevan</div>
+  </div>
+
+  <div class="toolbar">
+    <input class="search-input" id="search" type="text" placeholder="Search class name…" oninput="render()" />
+    <select class="filter-day" id="filter-day" onchange="render()">
+      <option value="">All days</option>
+      <option>Mon</option><option>Tue</option><option>Wed</option>
+      <option>Thu</option><option>Fri</option><option>Sat</option>
+    </select>
+    <span class="result-count" id="result-count"></span>
+  </div>
+
+  <div id="content"></div>
+</main>
+
+<div class="toast" id="toast"></div>
+
+<datalist id="teacher-list"></datalist>
+
+<script>
+  const DAY_ORDER = {Mon:0, Tue:1, Wed:2, Thu:3, Fri:4, Sat:5};
+  let assignments = [];
+  let originalJson = '';
+  let currentPool = 'Park Pool';
+
+  async function load() {
+    const res = await fetch('/api/teachers');
+    assignments = await res.json();
+    originalJson = JSON.stringify(assignments);
+    populateDatalist();
+    render();
+  }
+
+  function populateDatalist() {
+    const teachers = [...new Set(assignments.map(a => a.teacher))].sort();
+    const dl = document.getElementById('teacher-list');
+    dl.innerHTML = teachers.map(t => `<option value="${t}">`).join('');
+  }
+
+  function switchPool(pool) {
+    currentPool = pool;
+    document.getElementById('tab-park').classList.toggle('active', pool === 'Park Pool');
+    document.getElementById('tab-nye').classList.toggle('active', pool === 'Nye Bevan');
+    document.getElementById('filter-day').value = '';
+    document.getElementById('search').value = '';
+    render();
+  }
+
+  function render() {
+    const q = document.getElementById('search').value.toLowerCase();
+    const dayFilter = document.getElementById('filter-day').value;
+
+    const filtered = assignments.filter(a =>
+      a.pool === currentPool &&
+      (!dayFilter || a.day === dayFilter) &&
+      (!q || a.class_name.toLowerCase().includes(q) || a.teacher.toLowerCase().includes(q))
+    );
+
+    document.getElementById('result-count').textContent =
+      filtered.length === assignments.filter(a => a.pool === currentPool).length
+        ? `${filtered.length} classes`
+        : `${filtered.length} of ${assignments.filter(a => a.pool === currentPool).length} classes`;
+
+    if (!filtered.length) {
+      document.getElementById('content').innerHTML = '<div class="empty">No classes match your search.</div>';
+      return;
+    }
+
+    // Group by day
+    const byDay = {};
+    filtered.forEach(a => {
+      if (!byDay[a.day]) byDay[a.day] = [];
+      byDay[a.day].push(a);
+    });
+
+    const days = Object.keys(byDay).sort((a, b) => DAY_ORDER[a] - DAY_ORDER[b]);
+
+    document.getElementById('content').innerHTML = days.map(day => {
+      const rows = byDay[day]
+        .sort((a, b) => a.time.localeCompare(b.time))
+        .map(a => {
+          const idx = assignments.indexOf(a);
+          return `
+            <tr id="row-${idx}">
+              <td class="time-cell">${a.time}</td>
+              <td class="class-cell">${a.class_name}</td>
+              <td class="teacher-cell">
+                <input
+                  class="teacher-input"
+                  list="teacher-list"
+                  data-idx="${idx}"
+                  value="${a.teacher}"
+                  oninput="onTeacherChange(this)"
+                />
+              </td>
+            </tr>`;
+        }).join('');
+
+      return `
+        <div class="day-section">
+          <div class="day-heading">${day}</div>
+          <div class="table-wrap">
+            <table>
+              <thead><tr><th>Time</th><th>Class</th><th>Teacher</th></tr></thead>
+              <tbody>${rows}</tbody>
+            </table>
+          </div>
+        </div>`;
+    }).join('');
+
+    updateChangeCount();
+  }
+
+  function onTeacherChange(input) {
+    const idx = parseInt(input.dataset.idx);
+    assignments[idx].teacher = input.value;
+    const original = JSON.parse(originalJson)[idx]?.teacher;
+    const changed = input.value !== original;
+    input.classList.toggle('modified', changed);
+    document.getElementById(`row-${idx}`).classList.toggle('changed', changed);
+    updateChangeCount();
+    populateDatalist();
+  }
+
+  function updateChangeCount() {
+    const orig = JSON.parse(originalJson);
+    const count = assignments.filter((a, i) => a.teacher !== orig[i]?.teacher).length;
+    const el = document.getElementById('change-count');
+    if (count > 0) {
+      el.textContent = `${count} unsaved change${count !== 1 ? 's' : ''}`;
+      el.classList.add('show');
+    } else {
+      el.classList.remove('show');
+    }
+  }
+
+  async function saveAll() {
+    const btn = document.getElementById('save-btn');
+    btn.disabled = true;
+    btn.textContent = 'Saving…';
+    try {
+      const res = await fetch('/api/teachers', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(assignments)
+      });
+      if (res.ok) {
+        originalJson = JSON.stringify(assignments);
+        document.querySelectorAll('.teacher-input.modified').forEach(el => el.classList.remove('modified'));
+        document.querySelectorAll('tr.changed').forEach(el => el.classList.remove('changed'));
+        updateChangeCount();
+        showToast('Changes saved — take effect on next CSV drop');
+        populateDatalist();
+      }
+    } finally {
+      btn.disabled = false;
+      btn.textContent = 'Save Changes';
+    }
+  }
+
+  function showToast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg;
+    t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 3000);
+  }
+
+  load();
+</script>
+</body>
+</html>
