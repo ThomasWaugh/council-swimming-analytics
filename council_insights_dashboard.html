@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Swimming Lessons — Council Insights Dashboard</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: #f5f5f3; color: #1a1a1a; font-size: 14px; }
+  header { background: #1a1a1a; color: #fff; padding: 24px 32px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 8px; }
+  header h1 { font-size: 20px; font-weight: 600; letter-spacing: -0.3px; }
+  header span { font-size: 13px; opacity: 0.5; }
+  .container { max-width: 1100px; margin: 0 auto; padding: 24px; }
+  .section-title { font-size: 12px; font-weight: 600; color: #888; text-transform: uppercase; letter-spacing: 0.7px; margin: 28px 0 10px; }
+  .section-title:first-child { margin-top: 0; }
+
+  /* POOL COMPARISON */
+  .pool-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 4px; }
+  @media(max-width:600px){ .pool-grid { grid-template-columns: 1fr; } }
+  .pool-card { background: #fff; border: 1px solid #e8e8e6; border-radius: 12px; padding: 18px; }
+  .pool-name { font-size: 15px; font-weight: 700; color: #1a1a1a; margin-bottom: 14px; display: flex; align-items: center; gap: 9px; }
+  .pool-dot { width: 11px; height: 11px; border-radius: 50%; flex-shrink: 0; }
+  .pool-stat { display: flex; justify-content: space-between; align-items: center; padding: 7px 0; border-bottom: 1px solid #f5f5f3; font-size: 13px; }
+  .pool-stat:last-child { border-bottom: none; }
+  .pool-stat-label { color: #666; }
+  .pool-stat-val { font-weight: 600; color: #1a1a1a; }
+
+  /* BUCKET SUMMARY */
+  .bucket-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 10px; margin-bottom: 4px; }
+  .bucket { border-radius: 12px; padding: 16px; text-align: center; }
+  .bucket-num { font-size: 36px; font-weight: 700; line-height: 1; }
+  .bucket-label { font-size: 12px; margin-top: 5px; font-weight: 500; }
+  .bucket-sub { font-size: 11px; margin-top: 2px; opacity: 0.7; }
+
+  /* TABLES */
+  .table-wrap { background: #fff; border: 1px solid #e8e8e6; border-radius: 12px; overflow: hidden; margin-bottom: 4px; }
+  table { width: 100%; border-collapse: collapse; font-size: 12.5px; }
+  th { text-align: left; padding: 9px 16px; font-size: 11px; font-weight: 600; color: #888; border-bottom: 1px solid #f0f0ee; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.4px; background: #fafaf8; }
+  td { padding: 8px 16px; border-bottom: 1px solid #f5f5f3; color: #1a1a1a; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #fafaf8; }
+  .bar-wrap { display: flex; align-items: center; gap: 8px; }
+  .bar-bg { flex: 1; height: 7px; background: #f0f0ee; border-radius: 4px; overflow: hidden; min-width: 80px; }
+  .bar-fill { height: 100%; border-radius: 4px; transition: width 0.3s; }
+  .pct { font-size: 12px; min-width: 38px; text-align: right; font-weight: 600; }
+  .badge { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 5px; font-weight: 600; letter-spacing: 0.2px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Swimming Lessons — Council Insights</h1>
+  <span>Park Pool &amp; Nye Bevan · Week ending 25 Apr 2026</span>
+</header>
+<div class="container">
+
+  <!-- POOL COMPARISON -->
+  <div class="section-title">Pool Comparison</div>
+  <div class="pool-grid">
+    <div class="pool-card">
+      <div class="pool-name"><span class="pool-dot" style="background:#3B82F6"></span>Park Pool</div>
+      <div class="pool-stat"><span class="pool-stat-label">Group lessons per week</span><span class="pool-stat-val">130</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Children booked</span><span class="pool-stat-val">868</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Total capacity</span><span class="pool-stat-val">1,330</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Average fill rate</span><span class="pool-stat-val">66.8%</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Lessons ≥80% full</span><span class="pool-stat-val" style="color:#16a34a">51 &nbsp;(39%)</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Lessons &lt;50% full</span><span class="pool-stat-val" style="color:#dc2626">37 &nbsp;(28%)</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Teachers</span><span class="pool-stat-val">6</span></div>
+    </div>
+    <div class="pool-card">
+      <div class="pool-name"><span class="pool-dot" style="background:#10B981"></span>Nye Bevan</div>
+      <div class="pool-stat"><span class="pool-stat-label">Group lessons per week</span><span class="pool-stat-val">63</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Children booked</span><span class="pool-stat-val">439</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Total capacity</span><span class="pool-stat-val">629</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Average fill rate</span><span class="pool-stat-val">71.2%</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Lessons ≥80% full</span><span class="pool-stat-val" style="color:#16a34a">29 &nbsp;(46%)</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Lessons &lt;50% full</span><span class="pool-stat-val" style="color:#dc2626">8 &nbsp;(13%)</span></div>
+      <div class="pool-stat"><span class="pool-stat-label">Teachers</span><span class="pool-stat-val">5</span></div>
+    </div>
+  </div>
+
+  <!-- UTILISATION BUCKETS -->
+  <div class="section-title">Overall Capacity Utilisation — Both Pools Combined</div>
+  <div class="bucket-grid">
+    <div class="bucket" style="background:#DCFCE7">
+      <div class="bucket-num" style="color:#14532d">80</div>
+      <div class="bucket-label" style="color:#16a34a">lessons ≥80% full</div>
+      <div class="bucket-sub" style="color:#16a34a">41% of all lessons</div>
+    </div>
+    <div class="bucket" style="background:#FEF9C3">
+      <div class="bucket-num" style="color:#713f12">76</div>
+      <div class="bucket-label" style="color:#d97706">lessons 50–79% full</div>
+      <div class="bucket-sub" style="color:#d97706">39% of all lessons</div>
+    </div>
+    <div class="bucket" style="background:#FEE2E2">
+      <div class="bucket-num" style="color:#7f1d1d">45</div>
+      <div class="bucket-label" style="color:#dc2626">lessons &lt;50% full</div>
+      <div class="bucket-sub" style="color:#dc2626">23% of all lessons</div>
+    </div>
+  </div>
+
+  <!-- STAGE UTILISATION -->
+  <div class="section-title">Capacity Utilisation by Stage — Both Pools Combined</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Stage</th>
+        <th style="text-align:center">Lessons</th>
+        <th style="text-align:center">Booked</th>
+        <th style="text-align:center">Capacity</th>
+        <th>Fill rate</th>
+      </tr></thead>
+      <tbody id="stage-tbody"></tbody>
+    </table>
+  </div>
+
+  <!-- UNDER-UTILISED -->
+  <div class="section-title">⚠ Under-utilised Classes (&lt;50% full) — Action Required</div>
+  <div class="table-wrap">
+    <table>
+      <thead><tr>
+        <th>Pool</th>
+        <th>Class</th>
+        <th style="text-align:center">Booked</th>
+        <th style="text-align:center">Capacity</th>
+        <th>Fill rate</th>
+      </tr></thead>
+      <tbody id="under-tbody"></tbody>
+    </table>
+  </div>
+
+</div>
+<script>
+const stages=[
+  {stage:"SEN",lessons:1,booked:7,capacity:7},
+  {stage:"Ducklings",lessons:15,booked:82,capacity:96},
+  {stage:"Stage 4",lessons:24,booked:195,capacity:252},
+  {stage:"Stage 2",lessons:22,booked:150,capacity:191},
+  {stage:"Stage 1",lessons:24,booked:141,capacity:199},
+  {stage:"Stage 3",lessons:23,booked:159,capacity:233},
+  {stage:"Adult",lessons:4,booked:25,capacity:36},
+  {stage:"Advanced Academy",lessons:1,booked:9,capacity:14},
+  {stage:"Adult & Toddler",lessons:7,booked:53,capacity:87},
+  {stage:"Pre-School",lessons:14,booked:68,capacity:99},
+  {stage:"Bronze/Silver",lessons:3,booked:32,capacity:47},
+  {stage:"Adult & Baby",lessons:5,booked:36,capacity:62},
+  {stage:"Stage 5",lessons:20,booked:137,capacity:230},
+  {stage:"Stage 6",lessons:14,booked:106,capacity:190},
+  {stage:"Stage 7",lessons:9,booked:64,capacity:120},
+  {stage:"Gold/Honours",lessons:5,booked:36,capacity:74},
+  {stage:"Rookie",lessons:1,booked:4,capacity:10},
+  {stage:"Bronze",lessons:1,booked:3,capacity:12},
+];
+
+function fillColor(p){if(p>=80)return'#16a34a';if(p>=50)return'#d97706';return'#dc2626';}
+
+const stBody=document.getElementById('stage-tbody');
+stages.sort((a,b)=>(b.booked/b.capacity)-(a.booked/a.capacity));
+stBody.innerHTML=stages.map(s=>{
+  const pct=Math.round(s.booked/s.capacity*100);
+  return`<tr>
+    <td style="font-weight:500">${s.stage}</td>
+    <td style="text-align:center;color:#666">${s.lessons}</td>
+    <td style="text-align:center;font-weight:600">${s.booked}</td>
+    <td style="text-align:center;color:#666">${s.capacity}</td>
+    <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${fillColor(pct)}"></div></div><span class="pct" style="color:${fillColor(pct)}">${pct}%</span></div></td>
+  </tr>`;
+}).join('');
+
+const under=[
+  {pool:"Nye Bevan",stage:"Silver/Gold Mon 7pm",booked:1,capacity:14,pct:7},
+  {pool:"Park Pool",stage:"Stage 1 Tue 5:30pm",booked:1,capacity:8,pct:12},
+  {pool:"Park Pool",stage:"Stage 5 Mon 4pm",booked:2,capacity:12,pct:16},
+  {pool:"Park Pool",stage:"Stage 5 Tue 6pm",booked:2,capacity:12,pct:16},
+  {pool:"Park Pool",stage:"Stage 4 Tue 4pm",booked:2,capacity:10,pct:20},
+  {pool:"Park Pool",stage:"Stage 7 Wed 6pm",booked:3,capacity:14,pct:21},
+  {pool:"Nye Bevan",stage:"Bronze Thu 5:30pm",booked:3,capacity:12,pct:25},
+  {pool:"Nye Bevan",stage:"Stage 7 Tue 5:30pm",booked:3,capacity:12,pct:25},
+  {pool:"Nye Bevan",stage:"Stage 6 Fri 5pm",booked:3,capacity:12,pct:25},
+  {pool:"Park Pool",stage:"Stage 1 Sat 4:30pm",booked:2,capacity:8,pct:25},
+  {pool:"Park Pool",stage:"Stage 6 Sat 11am",booked:5,capacity:14,pct:35},
+  {pool:"Nye Bevan",stage:"Stage 3 HJ Wed 5:30pm",booked:4,capacity:11,pct:36},
+  {pool:"Park Pool",stage:"Stage 7 Wed 5pm",booked:4,capacity:14,pct:28},
+  {pool:"Nye Bevan",stage:"Duckling 4 Tue 4pm",booked:2,capacity:6,pct:33},
+  {pool:"Park Pool",stage:"Rookie Fri 6:30pm",booked:4,capacity:10,pct:40},
+  {pool:"Park Pool",stage:"Gold/Honours Fri 6:30pm",booked:7,capacity:16,pct:43},
+];
+
+const uBody=document.getElementById('under-tbody');
+under.sort((a,b)=>a.pct-b.pct);
+uBody.innerHTML=under.map(u=>{
+  const ppStyle=u.pool==='Park Pool'?'background:#DBEAFE;color:#1e40af':'background:#D1FAE5;color:#065f46';
+  return`<tr>
+    <td><span class="badge" style="${ppStyle}">${u.pool}</span></td>
+    <td style="font-weight:500">${u.stage}</td>
+    <td style="text-align:center;font-weight:600">${u.booked}</td>
+    <td style="text-align:center;color:#666">${u.capacity}</td>
+    <td><div class="bar-wrap"><div class="bar-bg"><div class="bar-fill" style="width:${u.pct}%;background:#dc2626"></div></div><span class="pct" style="color:#dc2626">${u.pct}%</span></div></td>
+  </tr>`;
+}).join('');
+</script>
+</body>
+</html>
